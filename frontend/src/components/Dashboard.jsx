@@ -37,7 +37,7 @@ export default function Dashboard() {
     return (
         <main className="dashboard">
             <section className="dashboard-header">
-                <h1>Welcome back, John Doe! Test</h1>
+                <h1>Welcome back, John Doe! Test2</h1>
                 <p> Here's what's happening with your clubs this week:</p>
             </section>
 
