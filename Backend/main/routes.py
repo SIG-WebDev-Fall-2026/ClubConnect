@@ -7,6 +7,7 @@ from main.extensions import db, bcrypt
 from main.models import User
 import re
 
+# <----------------------------------- Authentication ----------------------------------->
 @app.route("/register", methods=["POST"])
 def register():
     # Retrieve request data
@@ -97,3 +98,4 @@ def me():
         description=user.description,
     )
 
+# <----------------------------------- ########### ----------------------------------->
