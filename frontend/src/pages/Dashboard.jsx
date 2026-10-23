@@ -5,15 +5,15 @@ export default function Dashboard() {
     {
         id: 1,
         club: "ACM Web Dev",
-        title: "General Meeting",
+        title: "General Body Meeting",
         date: "Oct 16",
         time: "1:00 PM",
         location: "CDRLC 2433",
     },
     {
         id: 2,
-        club: "Computer Club",
-        title: "Git Workshop",
+        club: "Halloween Club",
+        title: "Spooky Git Workshop",
         date: "Oct 18",
         time: "6:00 PM",
         location: "SCE 302",
@@ -37,7 +37,7 @@ export default function Dashboard() {
     return (
         <main className="dashboard">
             <section className="dashboard-header">
-                <h1>Welcome back, John Doe! Test2</h1>
+                <h1>Welcome back, John Doe!👋</h1>
                 <p> Here's what's happening with your clubs this week:</p>
             </section>
 
@@ -64,7 +64,6 @@ export default function Dashboard() {
                         <div className="event-location">
                             <span>{event.location}</span>
                         </div>
-
                         </div>
                     ))}
                     </div>
@@ -87,6 +86,17 @@ export default function Dashboard() {
                     </div>
 
                     <button className="manage-button">Manage Clubs →</button>
+                </div>
+            </section>
+
+            <section className="explore-section">
+                <h2>Explore</h2>
+                <p> UIC Clubs, recommended for you:</p>
+
+                <div className="explore-grid">
+                    <div className="explore-card"></div>
+                    <div className="explore-card"></div>
+                    <div className="explore-card"></div>
                 </div>
             </section>
         </main>
