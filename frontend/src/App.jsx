@@ -1,5 +1,6 @@
 import { useEffect } from "react"
-import Dashboard from "./components/Dashboard"
+import Dashboard from "./pages/Dashboard"
+import Navbar from "./components/Navbar"
 import "./App.css"
 
 function App() {
@@ -9,7 +10,12 @@ function App() {
       .then((data) => console.log("Backend JSON:", data))
   }, [])
 
-  return <Dashboard />
+  return (
+    <>
+      <Navbar />
+      <Dashboard />
+    </>
+  )
 }
 
 export default App

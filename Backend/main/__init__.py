@@ -1,20 +1,21 @@
 from flask import Flask
 from flask_cors import CORS
-from .extensions import db
-
-# Nessecary for using enviroment variables
+from flask_jwt_extended import JWTManager
+from dotenv import load_dotenv
 import os
-#from dotenv import load_dotenv
 
-app = Flask(__name__)       # Create the app instance
-CORS(app)                   # Permits frontend and backend communication
+from main.extensions import db, bcrypt
 
-from .routes import api
-app.register_blueprint(api, url_prefix="/api")
+load_dotenv()
 
-# Sedrik must Configure the database
-# app.config['SQLALCHEMY_DATABASE_URI'] = <You can make this an enviroment I dunno>
+app = Flask(__name__)
+CORS(app)
 
-#db.init_app(app)
-#from main import routes
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATA_BASE_URL")
+app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY")
 
+db.init_app(app)
+bcrypt.init_app(app)
+JWTManager(app)
+
+from main import routes
