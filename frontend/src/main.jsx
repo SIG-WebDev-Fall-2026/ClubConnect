@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import LoginPage from './Login_page.jsx'
+import LoginPage from './pages/login_page.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
