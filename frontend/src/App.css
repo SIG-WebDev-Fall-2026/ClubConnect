@@ -1,3 +1,5 @@
+/* Main Dashboard CSS */
+
 * {
   box-sizing: border-box;
 }
@@ -16,12 +18,12 @@ body {
 
 .dashboard {
   width: 100%;
-  max-width: 1400px;
+  max-width: 1250px;
   margin: 0 auto;
   padding: 40px 72px;
   color: #f4f7fa;
   box-sizing: border-box;
-  margin-top: 4em;
+  margin-top: 2em;
 }
 
 .dashboard-header {
@@ -32,22 +34,23 @@ body {
 .dashboard-header h1 {
   margin: 0;
   font-size: 2.5rem;
+  font-weight: 600;
 }
 
 .dashboard-header p {
   margin-top: 1em;
   color: #aab4c3;
+
 }
 
-/* Main 2-column layout */
+/* Main dashboard layout */
 
 .dashboard-grid {
   display: grid;
   grid-template-columns: 2.5fr 1fr;
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
 }
-
 
 /* Shared card styling */
 
@@ -57,6 +60,7 @@ body {
   border-radius: 12px;
   padding: 20px;
   width: 100%;
+  height: 100%;
   box-sizing: border-box;
 }
 
@@ -128,19 +132,24 @@ body {
   text-align: right;
 }
 
-/* My Clubs */
+/* Main My Clubs Card */
+.clubs-card {
+  display: flex;
+  flex-direction: column;
+}
 
-.club-list {
+.clubs-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-bottom: 1em;
 }
 
 .club-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px;
+  padding: 6px 10px;
   border-radius: 8px;
 }
 
@@ -160,16 +169,55 @@ body {
 }
 
 .manage-button {
-  margin-top: 18px;
   border: none;
   background: none;
-  color: #aab4c3;
+  color: #D13A3F;
   font-size: 14px;
   cursor: pointer;
+  align-self: flex-start;
+  margin-top: auto;
 }
 
 .manage-button:hover {
-  color: #f4f7fa;
+  color: #F04B50;
+}
+
+.clubs-card {
+  display: flex;
+  flex-direction: column;
+}
+
+/* EXPLORE SECTION */
+
+.explore-section {
+  margin-top: 2em;
+}
+
+.explore-section h2 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 400;
+}
+
+.explore-section p {
+  margin-top: 0.5rem;
+  color: #aab4c3;
+  font-size: 1rem;
+}
+
+.explore-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 36px;
+  margin-top: 2rem;
+  max-width: 900px;
+}
+
+.explore-card {
+  height: 250px;
+  background-color: #111722;
+  border-radius: 12px;
+  border: 1px solid #263142;
 }
 
 /* For smaller screens */
