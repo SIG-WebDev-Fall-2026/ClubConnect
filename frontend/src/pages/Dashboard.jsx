@@ -1,4 +1,7 @@
+import {useAuth} from '../Providers/AuthProvider'
+
 export default function Dashboard() {
+    const { logout } = useAuth() // Testing Logout feature
 
     //Dummy Data for upcoming events and user clubs
     const upcomingEvents = [
@@ -98,6 +101,12 @@ export default function Dashboard() {
                     <div className="explore-card"></div>
                     <div className="explore-card"></div>
                 </div>
+            </section>
+
+            <section className="logout-section">
+                <button className="logout-button" onClick={logout}>
+                    Log Out
+                </button>
             </section>
         </main>
     )

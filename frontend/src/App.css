@@ -230,3 +230,25 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Quick and Dirty Styling for Logout*/
+.logout-section {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+.logout-button {
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background: #d93025;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  opacity: 0.9;
+}
