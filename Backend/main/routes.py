@@ -1,11 +1,61 @@
 from flask import jsonify, request
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from main import app
 from main.extensions import db, bcrypt
-from main.models import User
+from main.models import Club, User
 import re
+
+
+@app.route("/clubs/<int:club_id>", methods=["GET"])
+def get_club(club_id):
+    club = db.session.get(Club, club_id)
+    return jsonify({
+        "club_id": club.club_id,
+        "club_name": club.club_name,
+        "description": club.description,
+    }), 200
+
+
+@app.route("/clubs", methods=["POST"])
+def create_club():
+    incoming_data = request.get_json()
+    club = Club(
+        club_name=incoming_data["club_name"],
+        description=incoming_data.get("description"),
+    )
+    db.session.add(club)
+    db.session.commit()
+    return jsonify({
+        "club_id": club.club_id,
+        "club_name": club.club_name,
+        "description": club.description,
+    }), 200
+
+
+@app.route("/clubs/<int:club_id>", methods=["PATCH"])
+def update_club(club_id):
+    club = db.session.get(Club, club_id)
+    incoming_data = request.get_json()
+    if "club_name" in incoming_data:
+        club.club_name = incoming_data["club_name"]
+    if "description" in incoming_data:
+        club.description = incoming_data["description"]
+
+    db.session.commit()
+    return jsonify({
+        "club_id": club.club_id,
+        "club_name": club.club_name,
+        "description": club.description,
+    }), 200
+
+
+@app.route("/clubs/<int:club_id>", methods=["DELETE"])
+def delete_club(club_id):
+    club = db.session.get(Club, club_id)
+    db.session.delete(club)
+    db.session.commit()
+    return jsonify({"status": "club deleted"}), 200
 
 
 @app.get("/api/health")

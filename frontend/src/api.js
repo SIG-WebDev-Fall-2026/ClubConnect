@@ -31,6 +31,11 @@ export const api = {
     func_name: () => {return "Dummy Request"},
     register: (username, password) => request('register', { method: 'POST', body: { username, password } }),
     login: (username, password) => request('login', { method: 'POST', body: { username, password } }),
-    me: () => request('me', {method: 'GET', body: undefined, auth: true})
+    me: () => request('me', {method: 'GET', body: undefined, auth: true}),
+
+    getClub: (clubId) => request(`clubs/${clubId}`, { method: 'GET', body: undefined }),
+    createClub: (club) => request('clubs', { method: 'POST', body: club }),
+    updateClub: (clubId, updates) => request(`clubs/${clubId}`, { method: 'PATCH', body: updates }),
+    deleteClub: (clubId) => request(`clubs/${clubId}`, { method: 'DELETE', body: undefined })
 }
 
