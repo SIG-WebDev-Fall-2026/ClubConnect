@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import Dashboard from "./pages/Dashboard"
 import { Route,Routes } from 'react-router-dom'
 import Navbar from "./components/Navbar"
@@ -9,9 +10,7 @@ import NotFound from "./NotFound"
 import ProtectedRoute from './ProtectedRoute.jsx'
 
 
-
 function App() {
-  
   return (
     <>
       <Routes>
