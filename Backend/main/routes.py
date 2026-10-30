@@ -7,7 +7,7 @@ from main.extensions import db, bcrypt
 from main.models import Club, User
 import re
 
-
+# <--------------------------------------- Clubs --------------------------------------->
 @app.route("/clubs", methods=["GET"])
 def get_clubs():
     clubs = db.session.execute(db.select(Club)).scalars().all()
