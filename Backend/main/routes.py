@@ -7,6 +7,16 @@ from main.models import Club, User
 import re
 
 
+@app.route("/clubs", methods=["GET"])
+def get_clubs():
+    clubs = db.session.execute(db.select(Club)).scalars().all()
+    return jsonify([{
+        "club_id": club.club_id,
+        "club_name": club.club_name,
+        "description": club.description,
+    } for club in clubs]), 200
+
+
 @app.route("/clubs/<int:club_id>", methods=["GET"])
 def get_club(club_id):
     club = db.session.get(Club, club_id)

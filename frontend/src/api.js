@@ -33,6 +33,7 @@ export const api = {
     login: (username, password) => request('login', { method: 'POST', body: { username, password } }),
     me: () => request('me', {method: 'GET', body: undefined, auth: true}),
 
+    getClubs: () => request('clubs', { method: 'GET', body: undefined }),
     getClub: (clubId) => request(`clubs/${clubId}`, { method: 'GET', body: undefined }),
     createClub: (club) => request('clubs', { method: 'POST', body: club }),
     updateClub: (clubId, updates) => request(`clubs/${clubId}`, { method: 'PATCH', body: updates }),
