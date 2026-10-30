@@ -7,7 +7,21 @@ from main.extensions import db, bcrypt
 from main.models import Club, User
 import re
 
-# <--------------------------------------- Clubs --------------------------------------->
+# <------------------------------------ Status Check ------------------------------------>
+@app.get("/api/health")
+def health():
+    return jsonify(status="ok")
+
+@app.post("/api/hello")
+def hello():
+    data = request.get_json(silent=True)
+    name = data.get("name") if isinstance(data, dict) else None
+
+    if not isinstance(name, str) or not name.strip():
+        return jsonify(error="Send a non-empty 'name' in the JSON body."), 400
+    return jsonify(message=f"Hello, {name.strip()}!")
+
+# <------------------------------------- Clubs ------------------------------------------>
 @app.route("/clubs", methods=["GET"])
 def get_clubs():
     clubs = db.session.execute(db.select(Club)).scalars().all()
@@ -67,22 +81,6 @@ def delete_club(club_id):
     db.session.delete(club)
     db.session.commit()
     return jsonify({"status": "club deleted"}), 200
-
-
-@app.get("/api/health")
-def health():
-    return jsonify(status="ok")
-
-
-@app.post("/api/hello")
-def hello():
-    data = request.get_json(silent=True)
-    name = data.get("name") if isinstance(data, dict) else None
-
-    if not isinstance(name, str) or not name.strip():
-        return jsonify(error="Send a non-empty 'name' in the JSON body."), 400
-
-    return jsonify(message=f"Hello, {name.strip()}!")
 
 # <----------------------------------- Authentication ----------------------------------->
 @app.route("/register", methods=["POST"])
