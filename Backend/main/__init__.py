@@ -14,7 +14,7 @@ app = Flask(__name__)       # Create the app instance
 CORS(app)                   # Permits frontend and backend communication
 
 # Configure Database and JWT_SECRET_KEY
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATA_BASE_URL")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATA_BASE_URL")
 app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY")
 
 db.init_app(app)

@@ -4,8 +4,85 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from main import app
 from main.extensions import db, bcrypt
-from main.models import User
+from main.models import Club, User
 import re
+
+
+@app.route("/clubs", methods=["GET"])
+def get_clubs():
+    clubs = db.session.execute(db.select(Club)).scalars().all()
+    return jsonify([{
+        "club_id": club.club_id,
+        "club_name": club.club_name,
+        "description": club.description,
+    } for club in clubs]), 200
+
+
+@app.route("/clubs/<int:club_id>", methods=["GET"])
+def get_club(club_id):
+    club = db.session.get(Club, club_id)
+    return jsonify({
+        "club_id": club.club_id,
+        "club_name": club.club_name,
+        "description": club.description,
+    }), 200
+
+
+@app.route("/clubs", methods=["POST"])
+def create_club():
+    incoming_data = request.get_json()
+    club = Club(
+        club_name=incoming_data["club_name"],
+        description=incoming_data.get("description"),
+    )
+    db.session.add(club)
+    db.session.commit()
+    return jsonify({
+        "club_id": club.club_id,
+        "club_name": club.club_name,
+        "description": club.description,
+    }), 200
+
+
+@app.route("/clubs/<int:club_id>", methods=["PATCH"])
+def update_club(club_id):
+    club = db.session.get(Club, club_id)
+    incoming_data = request.get_json()
+    if "club_name" in incoming_data:
+        club.club_name = incoming_data["club_name"]
+    if "description" in incoming_data:
+        club.description = incoming_data["description"]
+
+    db.session.commit()
+    return jsonify({
+        "club_id": club.club_id,
+        "club_name": club.club_name,
+        "description": club.description,
+    }), 200
+
+
+@app.route("/clubs/<int:club_id>", methods=["DELETE"])
+def delete_club(club_id):
+    club = db.session.get(Club, club_id)
+    db.session.delete(club)
+    db.session.commit()
+    return jsonify({"status": "club deleted"}), 200
+
+
+@app.get("/api/health")
+def health():
+    return jsonify(status="ok")
+
+
+@app.post("/api/hello")
+def hello():
+    data = request.get_json(silent=True)
+    name = data.get("name") if isinstance(data, dict) else None
+
+    if not isinstance(name, str) or not name.strip():
+        return jsonify(error="Send a non-empty 'name' in the JSON body."), 400
+
+    return jsonify(message=f"Hello, {name.strip()}!")
 
 # <----------------------------------- Authentication ----------------------------------->
 @app.route("/register", methods=["POST"])
