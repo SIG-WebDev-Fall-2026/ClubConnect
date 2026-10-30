@@ -11,7 +11,6 @@ import ProtectedRoute from './ProtectedRoute.jsx'
 
 
 function App() {
-  
   return (
     <>
       <Routes>
