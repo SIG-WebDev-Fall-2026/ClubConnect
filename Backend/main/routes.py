@@ -4,8 +4,9 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from main import app
 from main.extensions import db, bcrypt
-from main.models import Club, User
+from main.models import Club, User, ClubEvents
 import re
+import datetime
 
 # <------------------------------------ Status Check ------------------------------------>
 @app.get("/api/health")
@@ -107,7 +108,7 @@ def register():
         description=description
     )
 
-    # Try inserting the User to the DB
+    # Gaurd against improper inserts
     try:
         db.session.add(user)
         db.session.commit()
@@ -173,4 +174,171 @@ def me():
         description=user.description,
     )
 
-# <----------------------------------- ########### ----------------------------------->
+# <------------------------------------- ClubEvents ------------------------------------->
+# Functions to add
+# ----------------------
+# Select an Event 
+# Select all Events
+# Create an Event
+# Delete an Event
+# Update a Description <-
+# Update date/start_time/end_time
+
+# TODO: Create Event Name Column
+
+# Retrieve 1 specific event
+@app.route("/event/select/<int:event_id>", methods=["GET"])
+def select_event(event_id):
+    # event lookup
+    event = db.session.get(ClubEvents, event_id)
+
+    # Confirm event exists
+    if event is None:
+        return jsonify({"error": "event not found"}), 404
+
+    # Return
+    return jsonify(event.to_dict())
+
+# Retrieve all events a club has to offer
+@app.route("/event/<int:club_id>/select_all", methods=["GET"])
+def select_club_events(club_id):
+    # Gaurd against invalid club
+    if (db.session.get(Club, club_id) == None):
+        return jsonify({"error": "club not found"}), 404
+
+    # Lookup events
+    stmt    = db.select(ClubEvents).filter_by(club_id=club_id)
+    events  = db.session.execute(stmt).scalars().all()
+
+    # return
+    return jsonify([e.to_dict() for e in events]), 200
+
+# Create a Club Event
+@app.route("/event/create/<int:club_id>", methods=["POST"])
+@jwt_required()
+def create_event(club_id):
+    # TODO: permission check once club_members exists
+
+    data = request.get_json(silent=True) or {}
+
+    start_time_raw = data.get("start_time")
+    end_time_raw = data.get("end_time")
+    date_raw = data.get("date")
+    description = data.get("description")
+
+    if not (start_time_raw and end_time_raw and date_raw):
+        return jsonify({"error": "start_time, end_time, and date are required"}), 400
+
+    # Parse and validate formats
+    try:
+        start_time = datetime.time.fromisoformat(start_time_raw)  # "14:30" or "14:30:00"
+        end_time = datetime.time.fromisoformat(end_time_raw)
+        date = datetime.date.fromisoformat(date_raw)              # "2026-11-04"
+    except (ValueError, TypeError):
+        return jsonify({"error": "invalid date or time format (use YYYY-MM-DD and HH:MM)"}), 400
+
+    if end_time <= start_time:
+        return jsonify({"error": "end_time must be after start_time"}), 400
+
+    if db.session.get(Club, club_id) is None:
+        return jsonify({"error": "club not found"}), 404
+
+    club_event = ClubEvents(
+        club_id=club_id,
+        start_time=start_time,
+        end_time=end_time,
+        date=date,
+        description=description,
+    )
+
+    try:
+        db.session.add(club_event)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Failed to create event")
+        return jsonify({"error": "failed to create event"}), 500
+
+    return jsonify(club_event.to_dict()), 201
+
+@app.route("/event/delete/<int:event_id>", methods=["DELETE"])
+@jwt_required()
+def delete_event(event_id):
+    # TODO: permission check once club_members exists
+
+    event = db.session.get(ClubEvents, event_id)
+    if event is None:
+        return jsonify({"error": "event not found"}), 404
+
+    try:
+        db.session.delete(event)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Failed to delete event %s", event_id)
+        return jsonify({"error": "failed to delete event"}), 500
+
+    return jsonify({"status": f"deleted event with id: {event_id}"}), 200
+
+@app.route("/event/update/<int:event_id>", methods=["PATCH"])
+@jwt_required()
+def update_event(event_id):
+    # TODO: permission check once club_members exists
+
+    event = db.session.get(ClubEvents, event_id)
+    if event is None:
+        return jsonify({"error": "event not found"}), 404
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or not data:
+        return jsonify({"error": "request body must be a non-empty JSON object"}), 400
+
+    allowed = {"date", "start_time", "end_time", "description"}
+    unknown = set(data) - allowed
+    if unknown:
+        return jsonify({"error": f"unknown field(s): {', '.join(sorted(unknown))}"}), 400
+
+    # Start from the current values, then override whatever was sent.
+    # Nothing is written to `event` until everything validates.
+    new_date = event.date
+    new_start = event.start_time
+    new_end = event.end_time
+    new_description = event.description
+
+    try:
+        if "date" in data:
+            new_date = datetime.date.fromisoformat(data["date"])
+        if "start_time" in data:
+            new_start = datetime.time.fromisoformat(data["start_time"])
+        if "end_time" in data:
+            new_end = datetime.time.fromisoformat(data["end_time"])
+    except (ValueError, TypeError):
+        return jsonify({"error": "invalid date or time format (use YYYY-MM-DD and HH:MM)"}), 400
+
+    if "description" in data:
+        desc = data["description"]
+        if desc is not None and not isinstance(desc, str):
+            return jsonify({"error": "description must be a string or null"}), 400
+        new_description = desc.strip() or None if desc is not None else None
+
+    if new_end <= new_start:
+        return jsonify({"error": "end_time must be after start_time"}), 400
+
+    event.date = new_date
+    event.start_time = new_start
+    event.end_time = new_end
+    event.description = new_description
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Failed to update event %s", event_id)
+        return jsonify({"error": "failed to update event"}), 500
+
+    return jsonify(event.to_dict()), 200
+
+
+
+
+
