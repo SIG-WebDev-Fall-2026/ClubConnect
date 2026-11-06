@@ -1,13 +1,96 @@
+from datetime import time
+
 from flask import jsonify, request
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from main import app
 from main.extensions import db, bcrypt
-from main.models import Club, User
+from main.models import Club, ClubRegularMeeting, User
 import re
 
 # <--------------------------------------- Clubs --------------------------------------->
+
+def _regular_meeting_json(meeting):
+    return {
+        "meeting_id": meeting.meeting_id,
+        "club_id": meeting.club_id,
+        "start_time": meeting.start_time.isoformat(),
+        "end_time": meeting.end_time.isoformat(),
+        "day": meeting.day,
+        "meeting_interval": meeting.meeting_interval,
+    }
+
+
+@app.route("/clubs/<int:club_id>/regular-meetings", methods=["GET"])
+def get_club_regular_meetings(club_id):
+    meetings = db.session.execute(
+        db.select(ClubRegularMeeting).where(ClubRegularMeeting.club_id == club_id)
+    ).scalars().all()
+    return jsonify([_regular_meeting_json(meeting) for meeting in meetings]), 200
+
+
+@app.route("/clubs/<int:club_id>/regular-meetings/<int:meeting_id>", methods=["GET"])
+def get_club_regular_meeting(club_id, meeting_id):
+    meeting = db.session.execute(
+        db.select(ClubRegularMeeting).where(
+            ClubRegularMeeting.club_id == club_id,
+            ClubRegularMeeting.meeting_id == meeting_id,
+        )
+    ).scalar_one()
+    return jsonify(_regular_meeting_json(meeting)), 200
+
+
+@app.route("/clubs/<int:club_id>/regular-meetings", methods=["POST"])
+def create_club_regular_meeting(club_id):
+    incoming_data = request.get_json()
+    meeting = ClubRegularMeeting(
+        club_id=club_id,
+        start_time=time.fromisoformat(incoming_data["start_time"]),
+        end_time=time.fromisoformat(incoming_data["end_time"]),
+        day=incoming_data["day"],
+        meeting_interval=incoming_data.get("meeting_interval"),
+    )
+    db.session.add(meeting)
+    db.session.commit()
+    return jsonify(_regular_meeting_json(meeting)), 200
+
+
+@app.route("/clubs/<int:club_id>/regular-meetings/<int:meeting_id>", methods=["PATCH"])
+def update_club_regular_meeting(club_id, meeting_id):
+    meeting = db.session.execute(
+        db.select(ClubRegularMeeting).where(
+            ClubRegularMeeting.club_id == club_id,
+            ClubRegularMeeting.meeting_id == meeting_id,
+        )
+    ).scalar_one()
+    incoming_data = request.get_json()
+    if "start_time" in incoming_data:
+        meeting.start_time = time.fromisoformat(incoming_data["start_time"])
+    if "end_time" in incoming_data:
+        meeting.end_time = time.fromisoformat(incoming_data["end_time"])
+    if "day" in incoming_data:
+        meeting.day = incoming_data["day"]
+    if "meeting_interval" in incoming_data:
+        meeting.meeting_interval = incoming_data["meeting_interval"]
+
+    db.session.commit()
+    return jsonify(_regular_meeting_json(meeting)), 200
+
+
+@app.route("/clubs/<int:club_id>/regular-meetings/<int:meeting_id>", methods=["DELETE"])
+def delete_club_regular_meeting(club_id, meeting_id):
+    meeting = db.session.execute(
+        db.select(ClubRegularMeeting).where(
+            ClubRegularMeeting.club_id == club_id,
+            ClubRegularMeeting.meeting_id == meeting_id,
+        )
+    ).scalar_one()
+    db.session.delete(meeting)
+    db.session.commit()
+    return jsonify({"status": "regular meeting deleted"}), 200
+
+
 @app.route("/clubs", methods=["GET"])
 def get_clubs():
     clubs = db.session.execute(db.select(Club)).scalars().all()
