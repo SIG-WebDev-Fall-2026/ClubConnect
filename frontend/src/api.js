@@ -51,7 +51,7 @@ export const api = {
     // Saved Clubs
     getSavedClubs: () => request('saved-clubs', { method: 'GET', body: undefined, auth: true }),
     saveClub: (clubId) => request(`saved-clubs/${clubId}`, { method: 'POST', body: undefined, auth: true }),
-    unsaveClub: (clubId) => request(`saved-clubs/${clubId}`, { method: 'DELETE', body: undefined, auth: true })
+    unsaveClub: (clubId) => request(`saved-clubs/${clubId}`, { method: 'DELETE', body: undefined, auth: true }),
   
     // Club Events
     getEvent: (eventId) => request(`event/select/${eventId}`, { method: 'GET', body: undefined }),
