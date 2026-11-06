@@ -9,7 +9,7 @@ from main.extensions import db, bcrypt
 from main.models import Club, ClubRegularMeeting, SavedClub, User
 import re
 
-# <--------------------------------------- Clubs --------------------------------------->
+# <--------------------------------------- Saved Clubs --------------------------------------->
 
 @app.route("/saved-clubs", methods=["GET"])
 @jwt_required()
@@ -46,6 +46,7 @@ def unsave_club(club_id):
     db.session.commit()
     return jsonify({"status": "club unsaved"}), 200
 
+# <--------------------------------------- Regular Meetings --------------------------------------->
 
 def _regular_meeting_json(meeting):
     return {
@@ -126,6 +127,7 @@ def delete_club_regular_meeting(club_id, meeting_id):
     db.session.commit()
     return jsonify({"status": "regular meeting deleted"}), 200
 
+# <--------------------------------------- Clubs --------------------------------------->
 
 @app.route("/clubs", methods=["GET"])
 def get_clubs():
@@ -187,6 +189,7 @@ def delete_club(club_id):
     db.session.commit()
     return jsonify({"status": "club deleted"}), 200
 
+# <--------------------------------------- Misc --------------------------------------->
 
 @app.get("/api/health")
 def health():

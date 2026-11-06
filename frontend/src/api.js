@@ -33,17 +33,23 @@ export const api = {
     login: (username, password) => request('login', { method: 'POST', body: { username, password } }),
     me: () => request('me', {method: 'GET', body: undefined, auth: true}),
 
+    // Clubs
+
     getClubs: () => request('clubs', { method: 'GET', body: undefined }),
     getClub: (clubId) => request(`clubs/${clubId}`, { method: 'GET', body: undefined }),
     createClub: (club) => request('clubs', { method: 'POST', body: club }),
     updateClub: (clubId, updates) => request(`clubs/${clubId}`, { method: 'PATCH', body: updates }),
     deleteClub: (clubId) => request(`clubs/${clubId}`, { method: 'DELETE', body: undefined }),
 
+    // Regular Club Meetings
+
     getClubRegularMeetings: (clubId) => request(`clubs/${clubId}/regular-meetings`, { method: 'GET', body: undefined }),
     getClubRegularMeeting: (clubId, meetingId) => request(`clubs/${clubId}/regular-meetings/${meetingId}`, { method: 'GET', body: undefined }),
     createClubRegularMeeting: (clubId, meeting) => request(`clubs/${clubId}/regular-meetings`, { method: 'POST', body: meeting }),
     updateClubRegularMeeting: (clubId, meetingId, updates) => request(`clubs/${clubId}/regular-meetings/${meetingId}`, { method: 'PATCH', body: updates }),
     deleteClubRegularMeeting: (clubId, meetingId) => request(`clubs/${clubId}/regular-meetings/${meetingId}`, { method: 'DELETE', body: undefined }),
+
+    // Saved Clubs
 
     getSavedClubs: () => request('saved-clubs', { method: 'GET', body: undefined, auth: true }),
     saveClub: (clubId) => request(`saved-clubs/${clubId}`, { method: 'POST', body: undefined, auth: true }),
