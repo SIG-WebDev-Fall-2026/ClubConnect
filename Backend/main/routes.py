@@ -1,10 +1,12 @@
+from datetime import time
+
 from flask import jsonify, request
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from main import app
 from main.extensions import db, bcrypt
-from main.models import Club, User, ClubEvents
+from main.models import Club, ClubRegularMeeting, SavedClub, User, ClubEvents
 import re
 import datetime
 
@@ -21,6 +23,124 @@ def hello():
     if not isinstance(name, str) or not name.strip():
         return jsonify(error="Send a non-empty 'name' in the JSON body."), 400
     return jsonify(message=f"Hello, {name.strip()}!")
+
+# <--------------------------------------- Saved Clubs --------------------------------------->
+
+@app.route("/saved-clubs", methods=["GET"])
+@jwt_required()
+def get_saved_clubs():
+    user_id = int(get_jwt_identity())
+    clubs = db.session.execute(
+        db.select(Club)
+        .join(SavedClub, SavedClub.club_id == Club.club_id)
+        .where(SavedClub.user_id == user_id)
+    ).scalars().all()
+    return jsonify([{
+        "club_id": club.club_id,
+        "club_name": club.club_name,
+        "description": club.description,
+    } for club in clubs]), 200
+
+
+@app.route("/saved-clubs/<int:club_id>", methods=["POST"])
+@jwt_required()
+def save_club(club_id):
+    user_id = int(get_jwt_identity())
+    saved_club = SavedClub(user_id=user_id, club_id=club_id)
+    db.session.add(saved_club)
+    db.session.commit()
+    return jsonify({"user_id": user_id, "club_id": club_id}), 200
+
+
+@app.route("/saved-clubs/<int:club_id>", methods=["DELETE"])
+@jwt_required()
+def unsave_club(club_id):
+    user_id = int(get_jwt_identity())
+    saved_club = db.session.get(SavedClub, (user_id, club_id))
+    db.session.delete(saved_club)
+    db.session.commit()
+    return jsonify({"status": "club unsaved"}), 200
+
+# <--------------------------------------- Regular Meetings --------------------------------------->
+
+def _regular_meeting_json(meeting):
+    return {
+        "meeting_id": meeting.meeting_id,
+        "club_id": meeting.club_id,
+        "start_time": meeting.start_time.isoformat(),
+        "end_time": meeting.end_time.isoformat(),
+        "day": meeting.day,
+        "meeting_interval": meeting.meeting_interval,
+    }
+
+
+@app.route("/clubs/<int:club_id>/regular-meetings", methods=["GET"])
+def get_club_regular_meetings(club_id):
+    meetings = db.session.execute(
+        db.select(ClubRegularMeeting).where(ClubRegularMeeting.club_id == club_id)
+    ).scalars().all()
+    return jsonify([_regular_meeting_json(meeting) for meeting in meetings]), 200
+
+
+@app.route("/clubs/<int:club_id>/regular-meetings/<int:meeting_id>", methods=["GET"])
+def get_club_regular_meeting(club_id, meeting_id):
+    meeting = db.session.execute(
+        db.select(ClubRegularMeeting).where(
+            ClubRegularMeeting.club_id == club_id,
+            ClubRegularMeeting.meeting_id == meeting_id,
+        )
+    ).scalar_one()
+    return jsonify(_regular_meeting_json(meeting)), 200
+
+
+@app.route("/clubs/<int:club_id>/regular-meetings", methods=["POST"])
+def create_club_regular_meeting(club_id):
+    incoming_data = request.get_json()
+    meeting = ClubRegularMeeting(
+        club_id=club_id,
+        start_time=time.fromisoformat(incoming_data["start_time"]),
+        end_time=time.fromisoformat(incoming_data["end_time"]),
+        day=incoming_data["day"],
+        meeting_interval=incoming_data.get("meeting_interval"),
+    )
+    db.session.add(meeting)
+    db.session.commit()
+    return jsonify(_regular_meeting_json(meeting)), 200
+
+
+@app.route("/clubs/<int:club_id>/regular-meetings/<int:meeting_id>", methods=["PATCH"])
+def update_club_regular_meeting(club_id, meeting_id):
+    meeting = db.session.execute(
+        db.select(ClubRegularMeeting).where(
+            ClubRegularMeeting.club_id == club_id,
+            ClubRegularMeeting.meeting_id == meeting_id,
+        )
+    ).scalar_one()
+    incoming_data = request.get_json()
+    if "start_time" in incoming_data:
+        meeting.start_time = time.fromisoformat(incoming_data["start_time"])
+    if "end_time" in incoming_data:
+        meeting.end_time = time.fromisoformat(incoming_data["end_time"])
+    if "day" in incoming_data:
+        meeting.day = incoming_data["day"]
+    if "meeting_interval" in incoming_data:
+        meeting.meeting_interval = incoming_data["meeting_interval"]
+
+    db.session.commit()
+    return jsonify(_regular_meeting_json(meeting)), 200
+
+
+@app.route("/clubs/<int:club_id>/regular-meetings/<int:meeting_id>", methods=["DELETE"])
+def delete_club_regular_meeting(club_id, meeting_id):
+    meeting = db.session.execute(
+        db.select(ClubRegularMeeting).where(
+            ClubRegularMeeting.club_id == club_id,
+            ClubRegularMeeting.meeting_id == meeting_id,
+        )
+    ).scalar_one()
+    db.session.delete(meeting)
+    db.session.commit()
+    return jsonify({"status": "regular meeting deleted"}), 200
 
 # <------------------------------------- Clubs ------------------------------------------>
 @app.route("/clubs", methods=["GET"])
