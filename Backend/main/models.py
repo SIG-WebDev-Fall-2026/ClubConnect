@@ -33,3 +33,10 @@ class ClubRegularMeeting(db.Model):
     end_time: Mapped[time]              = mapped_column(Time, nullable=False)
     day: Mapped[str]                    = mapped_column(String(20), nullable=False)
     meeting_interval: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+
+class SavedClub(db.Model):
+    __tablename__ = "saved_clubs"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
+    club_id: Mapped[int] = mapped_column(ForeignKey("clubs.club_id", ondelete="CASCADE"), primary_key=True)

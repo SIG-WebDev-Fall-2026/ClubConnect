@@ -6,10 +6,46 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from main import app
 from main.extensions import db, bcrypt
-from main.models import Club, ClubRegularMeeting, User
+from main.models import Club, ClubRegularMeeting, SavedClub, User
 import re
 
 # <--------------------------------------- Clubs --------------------------------------->
+
+@app.route("/saved-clubs", methods=["GET"])
+@jwt_required()
+def get_saved_clubs():
+    user_id = int(get_jwt_identity())
+    clubs = db.session.execute(
+        db.select(Club)
+        .join(SavedClub, SavedClub.club_id == Club.club_id)
+        .where(SavedClub.user_id == user_id)
+    ).scalars().all()
+    return jsonify([{
+        "club_id": club.club_id,
+        "club_name": club.club_name,
+        "description": club.description,
+    } for club in clubs]), 200
+
+
+@app.route("/saved-clubs/<int:club_id>", methods=["POST"])
+@jwt_required()
+def save_club(club_id):
+    user_id = int(get_jwt_identity())
+    saved_club = SavedClub(user_id=user_id, club_id=club_id)
+    db.session.add(saved_club)
+    db.session.commit()
+    return jsonify({"user_id": user_id, "club_id": club_id}), 200
+
+
+@app.route("/saved-clubs/<int:club_id>", methods=["DELETE"])
+@jwt_required()
+def unsave_club(club_id):
+    user_id = int(get_jwt_identity())
+    saved_club = db.session.get(SavedClub, (user_id, club_id))
+    db.session.delete(saved_club)
+    db.session.commit()
+    return jsonify({"status": "club unsaved"}), 200
+
 
 def _regular_meeting_json(meeting):
     return {
