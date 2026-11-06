@@ -29,11 +29,11 @@ class Club(db.Model):
 class ClubRegularMeeting(db.Model):
     __tablename__ = "club_regular_meetings"
 
-    meeting_id: Mapped[int]             = mapped_column(Identity(always=False), primary_key=True)
-    club_id: Mapped[int]                = mapped_column(ForeignKey("clubs.club_id", ondelete="CASCADE"), nullable=False)
-    start_time: Mapped[time]            = mapped_column(Time, nullable=False)
-    end_time: Mapped[time]              = mapped_column(Time, nullable=False)
-    day: Mapped[str]                    = mapped_column(String(20), nullable=False)
+    meeting_id: Mapped[int]              = mapped_column(Identity(always=False), primary_key=True)
+    club_id: Mapped[int]                 = mapped_column(ForeignKey("clubs.club_id", ondelete="CASCADE"), nullable=False)
+    start_time: Mapped[datetime.time]    = mapped_column(Time, nullable=False)
+    end_time: Mapped[datetime.time]      = mapped_column(Time, nullable=False)
+    day: Mapped[str]                     = mapped_column(String(20), nullable=False)
     meeting_interval: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
 # <--------------------------------------- Saved Clubs --------------------------------------->
@@ -43,6 +43,8 @@ class SavedClub(db.Model):
 
     user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
     club_id: Mapped[int] = mapped_column(ForeignKey("clubs.club_id", ondelete="CASCADE"), primary_key=True)
+    
+# <--------------------------------------- Club Events --------------------------------------->
 class ClubEvents(db.Model):
     __tablename__ = "club_events"
 
