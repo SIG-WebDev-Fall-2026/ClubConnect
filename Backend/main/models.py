@@ -24,6 +24,21 @@ class Club(db.Model):
     club_name: Mapped[str]          = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+# <--------------------------------------- Club Memberships --------------------------------------->
+
+class ClubMembership(db.Model):
+    __tablename__ = "club_memberships"
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    club_id: Mapped[int] = mapped_column(
+        ForeignKey("clubs.club_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    role: Mapped[str] = mapped_column(String(30), nullable=False)
+
 # <--------------------------------------- Regular Club Meetings --------------------------------------->
 
 class ClubRegularMeeting(db.Model):
