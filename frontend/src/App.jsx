@@ -12,6 +12,7 @@ import ProtectedRoute from './ProtectedRoute.jsx'
 function App() {
   return (
     <>
+      <Navbar />  
       <Routes>
         <Route element={<UnauthenticatedRoute/>}>
           <Route path='log-in' element={<Login/>}/>
@@ -22,7 +23,6 @@ function App() {
         </Route>
         <Route path='*' element={<NotFound/>}/>
       </Routes>
-      {/* <Navbar /> */}  
     </>
   )
 }

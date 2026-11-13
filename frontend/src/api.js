@@ -58,7 +58,14 @@ export const api = {
     getClubEvents: (clubId) => request(`event/${clubId}/select_all`, { method: 'GET', body: undefined }),
     createEvent: (clubId, event) => request(`event/create/${clubId}`, { method: 'POST', body: event, auth: true }),
     updateEvent: (eventId, updates) => request(`event/update/${eventId}`, { method: 'PATCH', body: updates, auth: true }),
-    deleteEvent: (eventId) => request(`event/delete/${eventId}`, { method: 'DELETE', body: undefined, auth: true })
+    deleteEvent: (eventId) => request(`event/delete/${eventId}`, { method: 'DELETE', body: undefined, auth: true }),
+    
+    //Club Members
+    getClubMembers: (clubId) => request(`clubs/${clubId}/members`, { method: 'GET', body: undefined }),
+    joinClub: (clubId) => request(`clubs/${clubId}/members`, { method: 'POST', body: undefined, auth: true }),
+    leaveClub: (clubId) => request(`clubs/${clubId}/members/me`, { method: 'DELETE', body: undefined, auth: true }),
+    updateMemberRole: (clubId, userId, role) => request(`clubs/${clubId}/members/${userId}`, { method: 'PATCH', body: { role }, auth: true }),
+    removeMember: (clubId, userId) => request(`clubs/${clubId}/members/${userId}`, { method: 'DELETE', body: undefined, auth: true })
 
 }
 
