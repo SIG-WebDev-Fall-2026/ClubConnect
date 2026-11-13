@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from main import app
 from main.extensions import db, bcrypt
-from main.models import Club, ClubRegularMeeting, SavedClub, User, ClubEvents
+from main.models import Club, ClubEvents, ClubMembership, ClubRegularMeeting, SavedClub, User
 import re
 import datetime
 
@@ -120,7 +120,12 @@ def me():
 @app.route("/saved-clubs", methods=["GET"])
 @jwt_required()
 def get_saved_clubs():
+    #User specific function
+    #Check only if user exists and clubs saved clubs are empty
     user_id = int(get_jwt_identity())
+    if db.session.get(User, user_id) is None:
+        return jsonify({"error": "user not found"}), 401
+
     clubs = db.session.execute(
         db.select(Club)
         .join(SavedClub, SavedClub.club_id == Club.club_id)
@@ -136,7 +141,18 @@ def get_saved_clubs():
 @app.route("/saved-clubs/<int:club_id>", methods=["POST"])
 @jwt_required()
 def save_club(club_id):
+    #User specific function
+    #Check only if user exists and club is in their saved list
     user_id = int(get_jwt_identity())
+    if db.session.get(User, user_id) is None:
+        return jsonify({"error": "user not found"}), 401
+    if db.session.get(Club, club_id) is None:
+        return jsonify({"error": "club not found"}), 404
+
+    existing_saved_club = db.session.get(SavedClub, (user_id, club_id))
+    if existing_saved_club is not None:
+        return jsonify({"error": "club already saved"}), 409
+
     saved_club = SavedClub(user_id=user_id, club_id=club_id)
     db.session.add(saved_club)
     db.session.commit()
@@ -146,8 +162,18 @@ def save_club(club_id):
 @app.route("/saved-clubs/<int:club_id>", methods=["DELETE"])
 @jwt_required()
 def unsave_club(club_id):
+    #User specific function
+    #Check only if user exists and club is in their saved list
     user_id = int(get_jwt_identity())
+    if db.session.get(User, user_id) is None:
+        return jsonify({"error": "user not found"}), 401
+    if db.session.get(Club, club_id) is None:
+        return jsonify({"error": "club not found"}), 404
+
     saved_club = db.session.get(SavedClub, (user_id, club_id))
+    if saved_club is None:
+        return jsonify({"error": "club is not saved"}), 404
+
     db.session.delete(saved_club)
     db.session.commit()
     return jsonify({"status": "club unsaved"}), 200
@@ -155,6 +181,7 @@ def unsave_club(club_id):
 # <--------------------------------------- Regular Meetings --------------------------------------->
 
 def _regular_meeting_json(meeting):
+    #Payload, not a route
     return {
         "meeting_id": meeting.meeting_id,
         "club_id": meeting.club_id,
@@ -164,9 +191,37 @@ def _regular_meeting_json(meeting):
         "meeting_interval": meeting.meeting_interval,
     }
 
+def _validate_club_access(club_id):
+    #Reusable function to check permissions
+    #It also checks if the user and club exists
+    user_id = int(get_jwt_identity())
+
+    if db.session.get(User, user_id) is None:
+        return jsonify({"error": "user not found"}), 401
+
+    if db.session.get(Club, club_id) is None:
+        return jsonify({"error": "club not found"}), 404
+
+    membership = db.session.execute(
+        db.select(ClubMembership).where(
+            ClubMembership.user_id == user_id,
+            ClubMembership.club_id == club_id,
+            ClubMembership.role == "leader",
+        )
+    ).scalar_one_or_none()
+
+    if membership is None:
+        return jsonify({"error": "not authorized; club leader access required"}), 403
+
+    return None
+
 
 @app.route("/clubs/<int:club_id>/regular-meetings", methods=["GET"])
 def get_club_regular_meetings(club_id):
+    #General function, no permission needed
+    if db.session.get(Club, club_id) is None:
+        return jsonify({"error": "club not found"}), 404
+
     meetings = db.session.execute(
         db.select(ClubRegularMeeting).where(ClubRegularMeeting.club_id == club_id)
     ).scalars().all()
@@ -175,17 +230,31 @@ def get_club_regular_meetings(club_id):
 
 @app.route("/clubs/<int:club_id>/regular-meetings/<int:meeting_id>", methods=["GET"])
 def get_club_regular_meeting(club_id, meeting_id):
+    #General function, no permission needed
+    if db.session.get(Club, club_id) is None:
+        return jsonify({"error": "club not found"}), 404
+
     meeting = db.session.execute(
         db.select(ClubRegularMeeting).where(
             ClubRegularMeeting.club_id == club_id,
             ClubRegularMeeting.meeting_id == meeting_id,
         )
-    ).scalar_one()
+    ).scalar_one_or_none()
+    if meeting is None:
+        return jsonify({"error": "regular meeting not found"}), 404
+
     return jsonify(_regular_meeting_json(meeting)), 200
 
 
 @app.route("/clubs/<int:club_id>/regular-meetings", methods=["POST"])
+@jwt_required()
 def create_club_regular_meeting(club_id):
+    #Permission needed
+    #Route only callable by Club Leader with matching club_id
+    denial = _validate_club_access(club_id)
+    if denial is not None:
+        return denial
+
     incoming_data = request.get_json()
     meeting = ClubRegularMeeting(
         club_id=club_id,
@@ -200,13 +269,23 @@ def create_club_regular_meeting(club_id):
 
 
 @app.route("/clubs/<int:club_id>/regular-meetings/<int:meeting_id>", methods=["PATCH"])
+@jwt_required()
 def update_club_regular_meeting(club_id, meeting_id):
+    #Permission needed
+    #Route only callable by Club Leader with matching club_id
+    denial = _validate_club_access(club_id)
+    if denial is not None:
+        return denial
+
     meeting = db.session.execute(
         db.select(ClubRegularMeeting).where(
             ClubRegularMeeting.club_id == club_id,
             ClubRegularMeeting.meeting_id == meeting_id,
         )
-    ).scalar_one()
+    ).scalar_one_or_none()
+    if meeting is None:
+        return jsonify({"error": "regular meeting not found"}), 404
+
     incoming_data = request.get_json()
     if "start_time" in incoming_data:
         meeting.start_time = time.fromisoformat(incoming_data["start_time"])
@@ -222,13 +301,23 @@ def update_club_regular_meeting(club_id, meeting_id):
 
 
 @app.route("/clubs/<int:club_id>/regular-meetings/<int:meeting_id>", methods=["DELETE"])
+@jwt_required()
 def delete_club_regular_meeting(club_id, meeting_id):
+    #Permission needed
+    #Route only callable by Club Leader with matching club_id
+    denial = _validate_club_access(club_id)
+    if denial is not None:
+        return denial
+
     meeting = db.session.execute(
         db.select(ClubRegularMeeting).where(
             ClubRegularMeeting.club_id == club_id,
             ClubRegularMeeting.meeting_id == meeting_id,
         )
-    ).scalar_one()
+    ).scalar_one_or_none()
+    if meeting is None:
+        return jsonify({"error": "regular meeting not found"}), 404
+
     db.session.delete(meeting)
     db.session.commit()
     return jsonify({"status": "regular meeting deleted"}), 200
@@ -236,6 +325,7 @@ def delete_club_regular_meeting(club_id, meeting_id):
 # <------------------------------------- Clubs ------------------------------------------>
 @app.route("/clubs", methods=["GET"])
 def get_clubs():
+    #General function, no perms needed
     clubs = db.session.execute(db.select(Club)).scalars().all()
     return jsonify([{
         "club_id": club.club_id,
@@ -246,7 +336,11 @@ def get_clubs():
 
 @app.route("/clubs/<int:club_id>", methods=["GET"])
 def get_club(club_id):
+    #No permissions needed, general function
     club = db.session.get(Club, club_id)
+    if club is None:
+        return jsonify({"error": "club not found"}), 404
+
     return jsonify({
         "club_id": club.club_id,
         "club_name": club.club_name,
@@ -256,6 +350,7 @@ def get_club(club_id):
 
 @app.route("/clubs", methods=["POST"])
 def create_club():
+    #No permissions needed?
     incoming_data = request.get_json()
     club = Club(
         club_name=incoming_data["club_name"],
@@ -271,7 +366,13 @@ def create_club():
 
 
 @app.route("/clubs/<int:club_id>", methods=["PATCH"])
+@jwt_required()
 def update_club(club_id):
+    #Club leaders who match club id only access
+    denial = _validate_club_access(club_id)
+    if denial is not None:
+        return denial
+
     club = db.session.get(Club, club_id)
     incoming_data = request.get_json()
     if "club_name" in incoming_data:
@@ -288,7 +389,13 @@ def update_club(club_id):
 
 
 @app.route("/clubs/<int:club_id>", methods=["DELETE"])
+@jwt_required()
 def delete_club(club_id):
+    #I assume club leader with specific club id only
+    denial = _validate_club_access(club_id)
+    if denial is not None:
+        return denial
+
     club = db.session.get(Club, club_id)
     db.session.delete(club)
     db.session.commit()
@@ -302,6 +409,7 @@ def delete_club(club_id):
 @app.route("/event/select/<int:event_id>", methods=["GET"])
 def select_event(event_id):
     # event lookup
+    #No permissions needed
     event = db.session.get(ClubEvents, event_id)
 
     # Confirm event exists
@@ -315,6 +423,8 @@ def select_event(event_id):
 @app.route("/event/<int:club_id>/select_all", methods=["GET"])
 def select_club_events(club_id):
     # Gaurd against invalid club
+    #No permissions needed
+
     if (db.session.get(Club, club_id) == None):
         return jsonify({"error": "club not found"}), 404
 
@@ -329,7 +439,10 @@ def select_club_events(club_id):
 @app.route("/event/create/<int:club_id>", methods=["POST"])
 @jwt_required()
 def create_event(club_id):
-    # TODO: permission check once club_members exists
+    #Club leaders who match club id only
+    denial = _validate_club_access(club_id)
+    if denial is not None:
+        return denial
 
     data = request.get_json(silent=True) or {}
 
@@ -352,9 +465,6 @@ def create_event(club_id):
     if end_time <= start_time:
         return jsonify({"error": "end_time must be after start_time"}), 400
 
-    if db.session.get(Club, club_id) is None:
-        return jsonify({"error": "club not found"}), 404
-
     club_event = ClubEvents(
         club_id=club_id,
         start_time=start_time,
@@ -376,11 +486,15 @@ def create_event(club_id):
 @app.route("/event/delete/<int:event_id>", methods=["DELETE"])
 @jwt_required()
 def delete_event(event_id):
-    # TODO: permission check once club_members exists
+    #Club leaders who match club id only
 
     event = db.session.get(ClubEvents, event_id)
     if event is None:
         return jsonify({"error": "event not found"}), 404
+
+    denial = _validate_club_access(event.club_id)
+    if denial is not None:
+        return denial
 
     try:
         db.session.delete(event)
@@ -395,11 +509,15 @@ def delete_event(event_id):
 @app.route("/event/update/<int:event_id>", methods=["PATCH"])
 @jwt_required()
 def update_event(event_id):
-    # TODO: permission check once club_members exists
+    #Club leaders who match club id only
 
     event = db.session.get(ClubEvents, event_id)
     if event is None:
         return jsonify({"error": "event not found"}), 404
+
+    denial = _validate_club_access(event.club_id)
+    if denial is not None:
+        return denial
 
     data = request.get_json(silent=True)
     if not isinstance(data, dict) or not data:
@@ -449,8 +567,4 @@ def update_event(event_id):
         return jsonify({"error": "failed to update event"}), 500
 
     return jsonify(event.to_dict()), 200
-
-
-
-
 
