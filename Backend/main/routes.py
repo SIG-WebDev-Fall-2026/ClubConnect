@@ -568,3 +568,133 @@ def update_event(event_id):
 
     return jsonify(event.to_dict()), 200
 
+# <------------------------------------- ClubMembers ------------------------------------->
+
+# All current roles, new roles requires modifying this list only
+VALID_ROLES = {"member", "leader"}
+
+def _membership_json(membership, user):
+    return {
+        "user_id": membership.user_id,
+        "club_id": membership.club_id,
+        "role": membership.role,
+        "username": user.username,
+    }
+
+#Checks how many leaders are in the club
+def _leader_count(club_id):
+    return db.session.scalar(
+        db.select(db.func.count()).select_from(ClubMembership).where(
+            ClubMembership.club_id == club_id,
+            ClubMembership.role == "leader",
+        )
+    )
+
+
+# Gets all members of the club
+@app.route("/clubs/<int:club_id>/members", methods=["GET"])
+def get_club_members(club_id):
+
+    #Club existence check
+    if db.session.get(Club, club_id) is None:
+        return jsonify({"error": "club not found"}), 404
+
+    rows = db.session.execute(
+        db.select(ClubMembership, User)
+        .join(User, User.user_id == ClubMembership.user_id)
+        .where(ClubMembership.club_id == club_id)
+    ).all()
+    return jsonify([_membership_json(m, u) for m, u in rows]), 200
+
+
+#New member joins club, defaulted to member
+@app.route("/clubs/<int:club_id>/members", methods=["POST"])
+@jwt_required()
+def join_club(club_id):
+    user_id = int(get_jwt_identity())
+
+    #Error checks before committing to db
+    if db.session.get(User, user_id) is None:
+        return jsonify({"error": "user not found"}), 401
+    if db.session.get(Club, club_id) is None:
+        return jsonify({"error": "club not found"}), 404
+    if db.session.get(ClubMembership, (user_id, club_id)) is not None:
+        return jsonify({"error": "already a member"}), 409
+
+    membership = ClubMembership(user_id=user_id, club_id=club_id, role="member")
+    try:
+        db.session.add(membership)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"error": "already a member"}), 409
+
+    return jsonify({"user_id": user_id, "club_id": club_id, "role": "member"}), 201
+
+
+#A member leaves club
+@app.route("/clubs/<int:club_id>/members/me", methods=["DELETE"])
+@jwt_required()
+def leave_club(club_id):
+    user_id = int(get_jwt_identity())
+    membership = db.session.get(ClubMembership, (user_id, club_id))
+    if membership is None:
+        return jsonify({"error": "not a member of this club"}), 404
+
+    #Makes sure atleast one member (leader) is in club
+    if membership.role == "leader" and _leader_count(club_id) <= 1:
+        return jsonify({"error": "last leader cannot leave; promote someone first"}), 409
+
+    db.session.delete(membership)
+    db.session.commit()
+    return jsonify({"status": "left club"}), 200
+
+
+# Change someone's role (Leader only)
+@app.route("/clubs/<int:club_id>/members/<int:target_user_id>", methods=["PATCH"])
+@jwt_required()
+def update_member_role(club_id, target_user_id):
+    #Checks for leader access
+    denial = _validate_club_access(club_id)
+    if denial is not None:
+        return denial
+
+    membership = db.session.get(ClubMembership, (target_user_id, club_id))
+    if membership is None:
+        return jsonify({"error": "member not found"}), 404
+
+    #Makes sure role change is only within what exists
+    data = request.get_json(silent=True) or {}
+    new_role = data.get("role")
+    if new_role not in VALID_ROLES:
+        return jsonify({"error": f"role must be one of: {', '.join(sorted(VALID_ROLES))}"}), 400
+
+    if membership.role == "leader" and new_role != "leader" and _leader_count(club_id) <= 1:
+        return jsonify({"error": "cannot demote the last leader"}), 409
+
+    membership.role = new_role
+    db.session.commit()
+    user = db.session.get(User, target_user_id)
+    return jsonify(_membership_json(membership, user)), 200
+
+
+#Remove a member from club (leaders only)
+@app.route("/clubs/<int:club_id>/members/<int:target_user_id>", methods=["DELETE"])
+@jwt_required()
+def remove_member(club_id, target_user_id):
+    #Checks leader access
+    denial = _validate_club_access(club_id)
+    if denial is not None:
+        return denial
+
+    membership = db.session.get(ClubMembership, (target_user_id, club_id))
+    if membership is None:
+        return jsonify({"error": "member not found"}), 404
+
+    #Makes sure not last member being removed
+    if membership.role == "leader" and _leader_count(club_id) <= 1:
+        return jsonify({"error": "cannot remove the last leader"}), 409
+
+    db.session.delete(membership)
+    db.session.commit()
+    return jsonify({"status": "member removed"}), 200
