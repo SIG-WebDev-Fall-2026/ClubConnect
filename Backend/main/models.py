@@ -52,6 +52,7 @@ class ClubEvents(db.Model):
     club_id: Mapped[int]                = mapped_column(ForeignKey("clubs.club_id", ondelete="CASCADE"), nullable=False)
     start_time: Mapped[datetime.time]   = mapped_column(Time, nullable=False)
     end_time: Mapped[datetime.time]     = mapped_column(Time, nullable=False)
+    event_name: Mapped[str]             = mapped_column(Text, nullable=False)
     date: Mapped[datetime.date]         = mapped_column(Date, nullable=False)
     description: Mapped[str | None]     = mapped_column(Text, nullable=True)
 
@@ -62,5 +63,6 @@ class ClubEvents(db.Model):
             "start_time": self.start_time.isoformat(),
             "end_time": self.end_time.isoformat(),
             "date": self.date.isoformat(),
+            "event_name": self.event_name,
             "description": self.description,
         }

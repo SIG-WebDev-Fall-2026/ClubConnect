@@ -336,10 +336,11 @@ def create_event(club_id):
     start_time_raw = data.get("start_time")
     end_time_raw = data.get("end_time")
     date_raw = data.get("date")
+    event_name = data.get("event_name")
     description = data.get("description")
 
-    if not (start_time_raw and end_time_raw and date_raw):
-        return jsonify({"error": "start_time, end_time, and date are required"}), 400
+    if not (start_time_raw and end_time_raw and date_raw and event_name):
+        return jsonify({"error": "start_time, end_time, event_name, and date are required"}), 400
 
     # Parse and validate formats
     try:
@@ -359,6 +360,7 @@ def create_event(club_id):
         club_id=club_id,
         start_time=start_time,
         end_time=end_time,
+        event_name=event_name,
         date=date,
         description=description,
     )
@@ -405,7 +407,7 @@ def update_event(event_id):
     if not isinstance(data, dict) or not data:
         return jsonify({"error": "request body must be a non-empty JSON object"}), 400
 
-    allowed = {"date", "start_time", "end_time", "description"}
+    allowed = {"date", "start_time", "end_time", "description", "event_name"}
     unknown = set(data) - allowed
     if unknown:
         return jsonify({"error": f"unknown field(s): {', '.join(sorted(unknown))}"}), 400
@@ -415,6 +417,7 @@ def update_event(event_id):
     new_date = event.date
     new_start = event.start_time
     new_end = event.end_time
+    new_name = event.event_name
     new_description = event.description
 
     try:
@@ -433,6 +436,12 @@ def update_event(event_id):
             return jsonify({"error": "description must be a string or null"}), 400
         new_description = desc.strip() or None if desc is not None else None
 
+    if "event_name" in data:
+        name = data["event_name"]
+        if not isinstance(name, str) or not name.strip():
+            return jsonify({"error": "event_name must be a non-empty string"}), 400
+        new_name = name.strip()
+
     if new_end <= new_start:
         return jsonify({"error": "end_time must be after start_time"}), 400
 
@@ -440,6 +449,7 @@ def update_event(event_id):
     event.start_time = new_start
     event.end_time = new_end
     event.description = new_description
+    event.event_name = new_name
 
     try:
         db.session.commit()
