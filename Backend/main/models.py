@@ -27,7 +27,7 @@ class Club(db.Model):
 # <--------------------------------------- Club Memberships --------------------------------------->
 
 class ClubMembership(db.Model):
-    __tablename__ = "club_memberships"
+    __tablename__ = "club_members"
 
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.user_id", ondelete="CASCADE"),
