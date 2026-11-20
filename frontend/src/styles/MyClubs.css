@@ -1,0 +1,186 @@
+
+/* Main My Clubs CSS */
+
+.myclubs {
+    width: 100%;
+    max-width: 1250px;
+    margin: 0 auto;
+    padding: 40px 72px;
+    color: #f4f7fa;
+    box-sizing: border-box;
+    margin-top: 1em;
+}
+
+/* My Clubs Header */
+
+.myclubs-header {
+    width: 100%;
+    max-width: 750px;
+    margin: 0 auto 2em;
+    text-align: center;
+}
+
+.myclubs-header h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.myclubs-header p {
+    margin-top: 1em;
+    color: #aab4c3;
+}
+
+/* Main My Clubs Layout */
+
+.myclubs-container {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #111722;
+    border: 1px solid #263142;
+    border-radius: 12px;
+    box-sizing: border-box;
+}
+
+/* Club Search */
+
+.myclubs-search {
+    width: 100%;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    background-color: #0e121d;
+    border: 1px solid #263142;
+    border-radius: 8px;
+    color: #f4f7fa;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+}
+
+.myclubs-search::placeholder {
+    color: #aab4c3;
+}
+
+.myclubs-search:focus {
+    outline: none;
+    border-color: #aab4c3;
+}
+
+/* Main Clubs List */
+
+.myclubs-list {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #263142;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.myclubs-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    background-color: #0e121d;
+    border-bottom: 1px solid #263142;
+}
+
+.myclubs-item:last-child {
+    border-bottom: none;
+}
+
+.myclubs-item:hover {
+    background-color: #182131;
+}
+
+/* Club Information */
+
+.myclubs-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background-color: #0b275b;
+    font-size: 22px;
+}
+
+.myclubs-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.myclubs-name-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.myclubs-name-row h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.myclubs-info p {
+    margin: 0;
+    color: #aab4c3;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Club Navigation Arrow */
+
+.myclubs-arrow {
+  margin-left: auto;
+  align-self: center;
+  color: #aab4c3;
+  font-size: 28px;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.myclubs-arrow:hover {
+  color: #f4f7fa;
+}
+
+/* Membership Badge */
+
+.myclubs-role {
+    padding: 4px 10px;
+    background-color: #263142;
+    border-radius: 8px;
+    color: #f4f7fa;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Empty Search Results */
+
+.myclubs-empty {
+    padding: 24px;
+    text-align: center;
+    color: #aab4c3;
+    font-size: 14px;
+}
+
+/* For smaller screens */
+
+@media (max-width: 750px) {
+.myclubs {
+    padding: 24px;
+}
+
+.myclubs-container {
+    padding: 16px;
+}
+
+.myclubs-item {
+    padding: 16px;
+}
+}

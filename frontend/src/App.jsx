@@ -7,6 +7,7 @@ import Register from "./pages/Register.jsx"
 import UnauthenticatedRoute from './UnauthenticatedRoute'
 import NotFound from "./NotFound"
 import ProtectedRoute from './ProtectedRoute.jsx'
+import MyClubs from "./pages/MyClubs";
 
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         </Route>
         <Route element={<ProtectedRoute/>}>
           <Route index element={<Dashboard />}/>
+          <Route path="clubs" element={<MyClubs />} />
         </Route>
         <Route path='*' element={<NotFound/>}/>
       </Routes>
