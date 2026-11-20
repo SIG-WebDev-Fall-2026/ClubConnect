@@ -23,7 +23,7 @@ body {
   padding: 40px 72px;
   color: #f4f7fa;
   box-sizing: border-box;
-  margin-top: 2em;
+  margin-top: 1em;
 }
 
 .dashboard-header {
@@ -33,7 +33,7 @@ body {
 
 .dashboard-header h1 {
   margin: 0;
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 600;
 }
 
@@ -48,7 +48,7 @@ body {
 .dashboard-grid {
   display: grid;
   grid-template-columns: 2.5fr 1fr;
-  gap: 20px;
+  gap: 30px;
   align-items: stretch;
 }
 
@@ -208,7 +208,7 @@ body {
 .explore-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 36px;
+  gap: 30px;
   margin-top: 2rem;
   max-width: 900px;
 }
